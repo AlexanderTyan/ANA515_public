@@ -32,10 +32,10 @@ library(reshape2)
 # https://data-flair.training/blogs/data-science-r-movie-recommendation/
 # and saved into personal GitHub space:
 movie_data <- read_csv(
-    'https://raw.githubusercontent.com/dr3am05/Source/main/movies.csv'
+    "https://raw.githubusercontent.com/dr3am05/Source/main/movies.csv"
 )
 rating_data <- read_csv(
-    'https://raw.githubusercontent.com/dr3am05/Source/main/ratings.csv'
+    "https://raw.githubusercontent.com/dr3am05/Source/main/ratings.csv"
 )
 ```
 
@@ -73,30 +73,35 @@ title. This matrix is `genre_mat2` and we can see its truncated version in the
 output below (though `str()` transposes the matrix visually, flipping
 movie titles/genres):
 ```{r}
-movie_genre <- as.data.frame(movie_data$genres, stringsAsFactors=FALSE)
-movie_genre2 <- as.data.frame(tstrsplit(movie_genre[,1], '[|]', 
-                                   type.convert=TRUE), 
-                         stringsAsFactors=FALSE)
+movie_genre <- as.data.frame(movie_data$genres, stringsAsFactors = FALSE)
+movie_genre2 <- as.data.frame(
+    tstrsplit(movie_genre[, 1], "[|]",
+        type.convert = TRUE
+    ),
+    stringsAsFactors = FALSE
+)
 colnames(movie_genre2) <- c(1:10)
 
-list_genre <- c("Action", "Adventure", "Animation", "Children", 
-                "Comedy", "Crime", "Documentary", "Drama", "Fantasy",
-                "Film-Noir", "Horror", "Musical", "Mystery","Romance",
-                "Sci-Fi", "Thriller", "War", "Western")
-genre_mat1 <- matrix(0,10330,18)
-genre_mat1[1,] <- list_genre
+list_genre <- c(
+    "Action", "Adventure", "Animation", "Children",
+    "Comedy", "Crime", "Documentary", "Drama", "Fantasy",
+    "Film-Noir", "Horror", "Musical", "Mystery", "Romance",
+    "Sci-Fi", "Thriller", "War", "Western"
+)
+genre_mat1 <- matrix(0, 10330, 18)
+genre_mat1[1, ] <- list_genre
 colnames(genre_mat1) <- list_genre
 
 for (index in 1:nrow(movie_genre2)) {
-  for (col in 1:ncol(movie_genre2)) {
-    gen_col = which(genre_mat1[1,] == movie_genre2[index,col])
-    genre_mat1[index+1,gen_col] <- 1
+    for (col in 1:ncol(movie_genre2)) {
+        gen_col <- which(genre_mat1[1, ] == movie_genre2[index, col])
+        genre_mat1[index + 1, gen_col] <- 1
+    }
 }
-}
-#remove first row, which was the genre list
-genre_mat2 <- as.data.frame(genre_mat1[-1,], stringsAsFactors=FALSE) 
+# remove first row, which was the genre list
+genre_mat2 <- as.data.frame(genre_mat1[-1, ], stringsAsFactors = FALSE)
 for (col in 1:ncol(genre_mat2)) {
-  genre_mat2[,col] <- as.integer(genre_mat2[,col]) #convert from characters to integers
+    genre_mat2[, col] <- as.integer(genre_mat2[, col]) # convert from characters to integers
 }
 str(genre_mat2)
 ```
@@ -116,18 +121,22 @@ column is a movie. That makes each entry in the matrix (`ratingMatrix`) a
 rating given by a particular user for a particular movie. The matrix is sparse 
 because most movies are not rated by most users. The output below shows the
 matrix dimensions. We force that object to be of `realRatingMatrix` type, for
-use by our `recommenderlab` package.
+use by our `recommenderlab` Machine Learning package later.
 
 ```{r}
 ratingMatrix <- dcast(
-    rating_data, userId~movieId, value.var = "rating", na.rm = FALSE
+    rating_data, userId ~ movieId,
+    value.var = "rating", na.rm = FALSE
 )
-ratingMatrix <- as.matrix(ratingMatrix[, -1]) #remove userIds
-#Convert rating matrix into a recommenderlab sparse matrix
+ratingMatrix <- as.matrix(ratingMatrix[, -1]) # remove userIds
+# Convert rating matrix into a recommenderlab sparse matrix
 ratingMatrix <- as(ratingMatrix, "realRatingMatrix")
 ratingMatrix
 ```
 
+We now filter out data to only keep what is useful. Let us only keep 
+that have "enough" data. "Enough" in this case is films rated by more than 50
+users and users who have rated more than 50 films. 
 ```{r}
 movie_ratings <- ratingMatrix[
     rowCounts(ratingMatrix) > 50,
@@ -136,9 +145,10 @@ movie_ratings <- ratingMatrix[
 movie_ratings
 ```
 
+We can visualize top users/top movies with this heatmap; the darker the square,
+the higher the rating given by that particular user (indicated by a row) given
+to that particular movie (given by a column) TODO: (might move to 8):
 ```{r}
-# Setting the threshold at 50 for the minimum number of users who have rated a
-# film and minimum number of views per film
 minimum_movies <- quantile(rowCounts(movie_ratings), 0.98)
 minimum_users <- quantile(colCounts(movie_ratings), 0.98)
 image(
@@ -146,64 +156,134 @@ image(
         rowCounts(movie_ratings) > minimum_movies,
         colCounts(movie_ratings) > minimum_users
     ],
-        main = "Heatmap of the top users and movies"
+    main = "Heatmap of the top users and movies"
 )
 ```
-
+Let us visualize distribution of the average ratings per user:
+TODO: (might move to 8)
 ```{r}
-# Visualize distribution of the average ratings per user (might move to 8)
 average_ratings <- rowMeans(movie_ratings)
 qplot(
     average_ratings,
     fill = I("steelblue"),
     col = I("red")
-    ) +
-ggtitle("Distribution of the average rating per user")
+) +
+    ggtitle("Distribution of the average rating per user")
 ```
 
+The next step in data preparation is to normalize user ratings to have mean of 
+0 to limit bias of extreme ratings on the model training later:
 ```{r}
-# Normalize user ratings to have mean of 0 to limit bias of extreme ratings
-# in the model later:
+
 normalized_ratings <- normalize(movie_ratings)
 sum(rowMeans(normalized_ratings) > 0.00001)
-image(normalized_ratings[rowCounts(normalized_ratings) > minimum_movies,
-                          colCounts(normalized_ratings) > minimum_users],
-main = "Normalized Ratings of the Top Users")
+image(
+    normalized_ratings[
+        rowCounts(normalized_ratings) > minimum_movies,
+        colCounts(normalized_ratings) > minimum_users
+    ],
+    main = "Normalized Ratings of the Top Users"
+)
 ```
 
-``` {r}
-# Visualize distribution of normalized average ratings per user
-average_ratings_normalized <- rowMeans(normalized_ratings)
-qplot(
-    average_ratings_normalized,
-    fill = I("steelblue"),
-    col = I("red")
-    ) +
-ggtitle("Distribution of the normalized average rating per user")
-```
-
-``` {r}
-# Binarize data to discrete values of 0 and 1, create a matrix that will consist
-# of 1 if the rating is above 3, otherwise 0
+As our final step in data preparation, we will binarize this data to have 
+discrete values of 0 and 1. This allows us to create a matrix that will
+consist of 1 if the movie rating is above 3 and 0 otherwise. This will allow
+for a more efficient recommendation system later; this is also visualized:
+```{r}
 binary_minimum_movies <- quantile(rowCounts(movie_ratings), 0.95)
 binary_minimum_users <- quantile(colCounts(movie_ratings), 0.95)
-#movies_watched <- binarize(movie_ratings, minRating = 1)
+# movies_watched <- binarize(movie_ratings, minRating = 1)
 
 good_rated_films <- binarize(movie_ratings, minRating = 3)
-image(good_rated_films[rowCounts(movie_ratings) > binary_minimum_movies,
-colCounts(movie_ratings) > binary_minimum_users],
-main = "Heatmap of the top users and movies")
+image(
+    good_rated_films[
+        rowCounts(movie_ratings) > binary_minimum_movies,
+        colCounts(movie_ratings) > binary_minimum_users
+    ],
+    main = "Heatmap of the top users and movies"
+)
 ```
 
 ## 6. Discuss the modeling. What modeling was used?
 
+We will first split our dataset into 80% training set `training_data`
+and 20% test set `testing_data`
+
 ```{r}
-sampled_data <- sample(x = c(TRUE, FALSE),
-                      size = nrow(movie_ratings),
-                      replace = TRUE,
-                      prob = c(0.8, 0.2))
+# splitting the dataset to 80% training set and 20% test set
+sampled_data <- sample(
+    x = c(TRUE, FALSE),
+    size = nrow(movie_ratings),
+    replace = TRUE,
+    prob = c(0.8, 0.2)
+)
 training_data <- movie_ratings[sampled_data, ]
 testing_data <- movie_ratings[!sampled_data, ]
 ```
+
+For the modeling part of this project, we will be utilizing Item Based 
+Collaborative Filtering System. This type of collaborative filtering looks for
+similarities between items based on the movie ratings.
+Since the parameters are default by nature, we will set `k` parameter to 30. 
+`k` represents the number of items for computing similarities, the algorithm 
+will identify `k` most similar items and store their respective number.
+
+```{r}
+recommen_model <- Recommender(
+    data = training_data,
+    method = "IBCF",
+    parameter = list(k = 30)
+)
+recommen_model
+class(recommen_model)
+```
+
+After we retrieve the `recommen_model`, we then generate a heatmap that contains top 20
+
+```{r}
+model_info <- getModel(recommen_model)
+class(model_info$sim)
+dim(model_info$sim)
+top_items <- 20
+image(model_info$sim[1:top_items, 1:top_items],
+   main = "Heatmap of the first rows and columns")
+```
+
+```{r}
+sum_rows <- rowSums(model_info$sim > 0)
+table(sum_rows)
+
+sum_cols <- colSums(model_info$sim > 0)
+qplot(sum_cols, fill=I("steelblue"), col=I("red"))+ ggtitle("Distribution of the column count")
+```
+
+```{r}
+top_recommendations <- 10 # the number of items to recommend to each user
+predicted_recommendations <- predict(object = recommen_model,
+                                     newdata = testing_data,
+                                     n = top_recommendations)
+predicted_recommendations
+```
+
+```{r}
+user1 <- predicted_recommendations@items[[1]] # recommendation for the first user
+movies_user1 <- predicted_recommendations@itemLabels[user1]
+movies_user2 <- movies_user1
+for (index in 1:10){
+  movies_user2[index] <- as.character(subset(movie_data,
+                                         movie_data$movieId == movies_user1[index])$title)
+}
+movies_user2
+```
+
+```{r}
+recommendation_matrix <- sapply(predicted_recommendations@items,
+                      function(x){ as.integer(colnames(movie_ratings)[x]) }) # matrix with the recommendations for each user
+#dim(recc_matrix)
+recommendation_matrix[,1:4]
+```
+
+movie_data %>% filter(movieId == 145)
 
 ## 8. Visualization
