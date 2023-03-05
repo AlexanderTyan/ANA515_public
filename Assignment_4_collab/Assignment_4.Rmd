@@ -251,11 +251,9 @@ image(model_info$sim[1:top_items, 1:top_items],
 ```
 
 ```{r}
-sum_rows <- rowSums(model_info$sim > 0)
-table(sum_rows)
-
 sum_cols <- colSums(model_info$sim > 0)
-qplot(sum_cols, fill=I("steelblue"), col=I("red"))+ ggtitle("Distribution of the column count")
+qplot(sum_cols, fill = I("steelblue"), col = I("#02ff35")) +
+    ggtitle("Distribution of the column count")
 ```
 
 ```{r}
