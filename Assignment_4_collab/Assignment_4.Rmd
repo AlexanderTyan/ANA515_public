@@ -240,6 +240,7 @@ class(recommen_model)
 ```
 
 After we retrieve the `recommen_model`, we then generate a heatmap that contains top 20
+films from our training set.
 
 ```{r}
 model_info <- getModel(recommen_model)
@@ -250,11 +251,17 @@ image(model_info$sim[1:top_items, 1:top_items],
    main = "Heatmap of the first rows and columns")
 ```
 
+TODO: add comments
+
 ```{r}
 sum_cols <- colSums(model_info$sim > 0)
 qplot(sum_cols, fill = I("steelblue"), col = I("#02ff35")) +
     ggtitle("Distribution of the column count")
 ```
+
+By using `predict()` function, we can identify similar films and rank them. For the
+`top_recommendations` variable, we are setting it to 10 which is the number of films
+that will be recommended to each user. Note that we will be using the testing set here.
 
 ```{r}
 top_recommendations <- 10 # the number of items to recommend to each user
@@ -263,6 +270,8 @@ predicted_recommendations <- predict(object = recommen_model,
                                      n = top_recommendations)
 predicted_recommendations
 ```
+
+Below is an example of what the `predicted_recommendations` function will do.
 
 ```{r}
 user1 <- predicted_recommendations@items[[1]] # recommendation for the first user
@@ -275,13 +284,13 @@ for (index in 1:10){
 movies_user2
 ```
 
+TODO: is this matrix giving us the movieId?
+
 ```{r}
 recommendation_matrix <- sapply(predicted_recommendations@items,
                       function(x){ as.integer(colnames(movie_ratings)[x]) }) # matrix with the recommendations for each user
 #dim(recc_matrix)
 recommendation_matrix[,1:4]
 ```
-
-movie_data %>% filter(movieId == 145)
 
 ## 8. Visualization
