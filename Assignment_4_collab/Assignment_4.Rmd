@@ -41,8 +41,6 @@ rating_data <- read_csv(
 
 ## 4. Describe your data set 
 
-
-
 This dataset consists of `r nrow(rating_data)` ratings applied over 
 `r nrow(movie_data)` movies. Movie data has `r nrow(movie_data)` rows with 
 `r ncol(movie_data)` columns, named `movieId`, `title` and `genres`. `movieId` is 
@@ -136,7 +134,8 @@ ratingMatrix
 
 We now filter out data to only keep what is useful. Let us only keep 
 that have "enough" data. "Enough" in this case is films rated by more than 50
-users and users who have rated more than 50 films. 
+users and users who have rated more than 50 films.
+
 ```{r}
 movie_ratings <- ratingMatrix[
     rowCounts(ratingMatrix) > 50,
@@ -147,7 +146,8 @@ movie_ratings
 
 We can visualize top users/top movies with this heatmap; the darker the square,
 the higher the rating given by that particular user (indicated by a row) given
-to that particular movie (given by a column) TODO: (might move to 8):
+to that particular movie (given by a column):
+
 ```{r}
 minimum_movies <- quantile(rowCounts(movie_ratings), 0.98)
 minimum_users <- quantile(colCounts(movie_ratings), 0.98)
@@ -159,8 +159,9 @@ image(
     main = "Heatmap of the top users and movies"
 )
 ```
+
 Let us visualize distribution of the average ratings per user:
-TODO: (might move to 8)
+
 ```{r}
 average_ratings <- rowMeans(movie_ratings)
 qplot(
@@ -173,8 +174,8 @@ qplot(
 
 The next step in data preparation is to normalize user ratings to have mean of 
 0 to limit bias of extreme ratings on the model training later:
-```{r}
 
+```{r}
 normalized_ratings <- normalize(movie_ratings)
 sum(rowMeans(normalized_ratings) > 0.00001)
 image(
@@ -190,6 +191,7 @@ As our final step in data preparation, we will binarize this data to have
 discrete values of 0 and 1. This allows us to create a matrix that will
 consist of 1 if the movie rating is above 3 and 0 otherwise. This will allow
 for a more efficient recommendation system later; this is also visualized:
+
 ```{r}
 binary_minimum_movies <- quantile(rowCounts(movie_ratings), 0.95)
 binary_minimum_users <- quantile(colCounts(movie_ratings), 0.95)
@@ -208,7 +210,7 @@ image(
 ## 6. Discuss the modeling. What modeling was used?
 
 We will first split our dataset into 80% training set `training_data`
-and 20% test set `testing_data`
+and 20% test set `testing_data`.
 
 ```{r}
 # splitting the dataset to 80% training set and 20% test set
@@ -239,8 +241,8 @@ recommen_model
 class(recommen_model)
 ```
 
-After we retrieve the `recommen_model`, we then generate a heatmap that contains top 20
-films from our training set.
+After we retrieve the `recommen_model`, we then generate a heatmap that 
+contains top 20 films from our training set.
 
 ```{r}
 model_info <- getModel(recommen_model)
@@ -251,13 +253,16 @@ image(model_info$sim[1:top_items, 1:top_items],
    main = "Heatmap of the first rows and columns")
 ```
 
-TODO: add comments
+Let us visualize the distribution of the sums of similarities per each movie.
+Which similarity score sums are the most frequent?
 
 ```{r}
 sum_cols <- colSums(model_info$sim > 0)
 qplot(sum_cols, fill = I("steelblue"), col = I("#02ff35")) +
     ggtitle("Distribution of the column count")
 ```
+
+## 7. Produce and discuss the output. What are the results?
 
 By using `predict()` function, we can identify similar films and rank them. For the
 `top_recommendations` variable, we are setting it to 10 which is the number of films
@@ -272,25 +277,107 @@ predicted_recommendations
 ```
 
 Below is an example of what the `predicted_recommendations` function will do.
+By using the recommendation given for the first user, we can use that to
+recommend movies for the second user.
 
 ```{r}
-user1 <- predicted_recommendations@items[[1]] # recommendation for the first user
+# recommendation for the first user
+user1 <- predicted_recommendations@items[[1]]
 movies_user1 <- predicted_recommendations@itemLabels[user1]
 movies_user2 <- movies_user1
 for (index in 1:10){
-  movies_user2[index] <- as.character(subset(movie_data,
-                                         movie_data$movieId == movies_user1[index])$title)
+    movies_user2[index] <- as.character(
+        subset(movie_data, movie_data$movieId == movies_user1[index])$title
+    )
 }
 movies_user2
 ```
 
-TODO: is this matrix giving us the movieId?
+`recommendation_matrix` has 10 rows (i.e. 10 movie receommendations per user)
+and each columns represents a user (by user ID). Each entry is an ID of a
+recommended movie.
 
 ```{r}
+# matrix with the recommendations for each user
 recommendation_matrix <- sapply(predicted_recommendations@items,
-                      function(x){ as.integer(colnames(movie_ratings)[x]) }) # matrix with the recommendations for each user
+                      function(x){ as.integer(colnames(movie_ratings)[x]) })
 #dim(recc_matrix)
 recommendation_matrix[,1:4]
 ```
 
-## 8. Visualization
+## 8. Provide an explanation with any visuals.
+
+Previously in (5), we've done visualizations with heatmaps. The first one was
+top users/top movies heatmap; the darker the square,
+the higher the rating given by that particular user (indicated by a row) given
+to that particular movie (given by a column). Here's a reproduction of it from
+earlier:
+
+```{r}
+image(
+    movie_ratings[
+        rowCounts(movie_ratings) > minimum_movies,
+        colCounts(movie_ratings) > minimum_users
+    ],
+    main = "Heatmap of the top users and movies"
+)
+```
+
+Similarly, here is a reproduction of the normalized version of these ratings
+from (5):
+
+```{r}
+image(
+    normalized_ratings[
+        rowCounts(normalized_ratings) > minimum_movies,
+        colCounts(normalized_ratings) > minimum_users
+    ],
+    main = "Normalized Ratings of the Top Users"
+)
+```
+
+After training our recommendation, we generated a heatmap that contains top 20
+films from our training set; to visualize, among top 20, which ones are most
+similar to which other movies. This is exploring what will be the basis of our
+recommendations (recommending movies similar to what a user already liked).
+
+```{r}
+image(model_info$sim[1:top_items, 1:top_items],
+   main = "Heatmap of the first rows and columns")
+```
+
+From the `recommendation_matrix` that we generated above, we can visualize the 
+distribution (by count) of the top 10 recommended movie titles via this 
+histrogram. 
+
+```{r}
+recommendation_table <- as.data.frame(
+    as.vector(recommendation_matrix)
+)
+colnames(recommendation_table)[1] <- "movieId"
+
+recommendation_table_top <- recommendation_table %>%
+    group_by(movieId) %>%
+    filter(n() > 5)
+
+recommendation_table_top$title <- with(
+    movie_data, title[match(recommendation_table_top$movieId, movieId)]
+)
+
+recommendation_table_top <- recommendation_table_top %>%
+    add_count(title, sort = TRUE) %>%
+    distinct()
+
+ggplot(recommendation_table_top[1:10, ], aes(x = title, y = n)) +
+    geom_bar(stat = "identity", show.legend = FALSE, width = 0.8) +
+    labs(x = "Movie Title",
+         y = "Frequency",
+         title = "Distribution of recommendation matrix") +
+    theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5),
+          axis.title.x = element_text(size = 10),
+          axis.title.y = element_text(size = 10),
+          plot.title = element_text(size = 15))
+```
+
+So we are seeing the most frequently recommended movies is 
+`r recommendation_table_top$title[1]`.
