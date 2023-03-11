@@ -164,7 +164,7 @@ image(
 
 Let us visualize distribution of the average ratings per user:
 
-```{r}
+```{r, warning = FALSE}
 average_ratings <- rowMeans(movie_ratings)
 qplot(
     average_ratings,
