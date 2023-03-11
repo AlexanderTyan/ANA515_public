@@ -100,12 +100,13 @@ for (index in 1:nrow(movie_genre2)) {
 # remove first row, which was the genre list
 genre_mat2 <- as.data.frame(genre_mat1[-1, ], stringsAsFactors = FALSE)
 for (col in 1:ncol(genre_mat2)) {
-    genre_mat2[, col] <- as.integer(genre_mat2[, col]) # convert from characters to integers
+    # convert from characters to integers
+    genre_mat2[, col] <- as.integer(genre_mat2[, col])
 }
 str(genre_mat2)
 ```
 
-Next, we create a search matrix that merge `movie_data` and `genre_mat2`. 
+Next, we create a search matrix that merges `movie_data` and `genre_mat2`. 
 This allows user to easily perform a search of the movie titles based on 
 the genres listed in our list. This merged matrix is `SearchMatrix` below.
 
@@ -134,8 +135,8 @@ ratingMatrix
 ```
 
 We now filter out data to only keep what is useful. Let us only keep 
-that have "enough" data. "Enough" in this case is films rated by more than 50
-users and users who have rated more than 50 films.
+records with "enough" data. "Enough" in this case is films rated by more than 
+50 users and users who have rated more than 50 films.
 
 ```{r}
 movie_ratings <- ratingMatrix[
