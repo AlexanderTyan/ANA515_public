@@ -274,7 +274,7 @@ By using `predict()` function, we can identify similar films and rank them. For 
 that will be recommended to each user. Note that we will be using the testing set here, i.e. we predict on data not seen before by the prediction model.
 
 ```{r}
-top_recommendations <- 10 # the number of items to recommend to each user
+top_recommendations <- 10  # the number of items to recommend to each user
 predicted_recommendations <- predict(object = recommen_model,
                                      newdata = testing_data,
                                      n = top_recommendations)
@@ -306,8 +306,7 @@ recommended movie.
 # matrix with the recommendations for each user
 recommendation_matrix <- sapply(predicted_recommendations@items,
                       function(x){ as.integer(colnames(movie_ratings)[x]) })
-#dim(recc_matrix)
-recommendation_matrix[,1:4]
+recommendation_matrix[, 1:4]
 ```
 
 ## 8. Provide an explanation with any visuals.
