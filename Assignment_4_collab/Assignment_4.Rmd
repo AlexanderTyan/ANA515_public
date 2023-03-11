@@ -1,21 +1,22 @@
 ---
-title: "ANA 515 Assignment 4"
+title: "ANA 515: Assignment 4"
 author: Alexander Tyan, Jie Hui Ho
 date: March 12, 2023
 output: pdf_document
+bibliography: citations.bib  
 ---
 
 ## 1. Discuss the business problem/goal
 
-The goals of this project is to create a recommendation engine that recommends 
+The goals of this project (@dataflair_machine_2023) is to create a recommendation engine that suggests 
 films that appeal to users based on their preferences and browsing history. The
- recommendation are powered by a Machine Learning algorithm.
+ recommendations are powered by a Machine Learning algorithm; specifically an Item Based Collaborative Filter.
 
-## 2. identify where the dataset was retrieved from
+## 2. Identify where the dataset was retrieved from
 
 The MovieLens dataset was retrieved from  
 `https://drive.google.com/file/d/1Dn1BZD3YxgBQJSIjbfNnmCFlDW2jdQGD/view`  
-which has two csv files – `movies.csv` and `ratings.csv`.
+which has two csv files – `movies.csv` and `ratings.csv` (@dataflair_machine_2023).
 
 ## 3. Identify the code that imported and saved your dataset in R
 
@@ -167,7 +168,7 @@ average_ratings <- rowMeans(movie_ratings)
 qplot(
     average_ratings,
     fill = I("steelblue"),
-    col = I("red")
+    col = I("#769bb9")
 ) +
     ggtitle("Distribution of the average rating per user")
 ```
@@ -195,7 +196,6 @@ for a more efficient recommendation system later; this is also visualized:
 ```{r}
 binary_minimum_movies <- quantile(rowCounts(movie_ratings), 0.95)
 binary_minimum_users <- quantile(colCounts(movie_ratings), 0.95)
-# movies_watched <- binarize(movie_ratings, minRating = 1)
 
 good_rated_films <- binarize(movie_ratings, minRating = 3)
 image(
@@ -214,6 +214,7 @@ and 20% test set `testing_data`.
 
 ```{r}
 # splitting the dataset to 80% training set and 20% test set
+set.seed(1234)  # to generate reproducible results
 sampled_data <- sample(
     x = c(TRUE, FALSE),
     size = nrow(movie_ratings),
@@ -258,7 +259,7 @@ Which similarity score sums are the most frequent?
 
 ```{r}
 sum_cols <- colSums(model_info$sim > 0)
-qplot(sum_cols, fill = I("steelblue"), col = I("#02ff35")) +
+qplot(sum_cols, fill = I("#008cff"), col = I("#afdbff")) +
     ggtitle("Distribution of the column count")
 ```
 
@@ -350,7 +351,7 @@ From the `recommendation_matrix` that we generated above, we can visualize the
 distribution (by count) of the top 10 recommended movie titles via this 
 histrogram. 
 
-```{r}
+```{r, fig.width=10,fig.height=11}
 recommendation_table <- as.data.frame(
     as.vector(recommendation_matrix)
 )
@@ -373,11 +374,20 @@ ggplot(recommendation_table_top[1:10, ], aes(x = title, y = n)) +
     labs(x = "Movie Title",
          y = "Frequency",
          title = "Distribution of recommendation matrix") +
-    theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5),
-          axis.title.x = element_text(size = 10),
-          axis.title.y = element_text(size = 10),
-          plot.title = element_text(size = 15))
+    theme(axis.text.x = element_text(
+        angle = 75, vjust = 0.5, hjust = 0.5, size = 8
+        ),
+        axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10),
+        plot.title = element_text(size = 15)
+    )
 ```
 
-So we are seeing the most frequently recommended movies is 
+So we are seeing the most frequently recommended movie is 
 `r recommendation_table_top$title[1]`.
+
+## Citations
+
+---
+nocite: '@*'
+---
