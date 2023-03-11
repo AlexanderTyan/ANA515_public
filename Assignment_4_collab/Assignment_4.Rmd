@@ -20,7 +20,7 @@ which has two csv files – `movies.csv` and `ratings.csv` (@dataflair_machine_2
 
 ## 3. Identify the code that imported and saved your dataset in R
 
-```{r, echo = FALSE, results = "hide", include = FALSE}
+```{r, include = FALSE}
 library(tidyverse)
 library(recommenderlab)
 library(data.table)
@@ -28,7 +28,7 @@ library(ggplot2)
 library(reshape2)
 ```
 
-``` {r}
+``` {r, message = FALSE}
 # Reading in the dataset, as downloaded from the links provided at
 # https://data-flair.training/blogs/data-science-r-movie-recommendation/
 # and saved into personal GitHub space:
