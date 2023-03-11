@@ -192,7 +192,7 @@ image(
 As our final step in data preparation, we will binarize this data to have 
 discrete values of 0 and 1. This allows us to create a matrix that will
 consist of 1 if the movie rating is above 3 and 0 otherwise. This will allow
-for a more efficient recommendation system later; this is also visualized:
+for a more efficient recommendation system later. This is a heatmap of this binarized version of that data:
 
 ```{r}
 binary_minimum_movies <- quantile(rowCounts(movie_ratings), 0.95)
@@ -256,7 +256,7 @@ image(model_info$sim[1:top_items, 1:top_items],
 ```
 
 Let us visualize the distribution of the sums of similarities per each movie.
-Which similarity score sums are the most frequent?
+Which similarity score sums are the most frequent? This is just a way to explore our calculated similarity scores. (A single similarity score is between 0 and 1).
 
 ```{r}
 sum_cols <- colSums(model_info$sim > 0)
@@ -264,11 +264,14 @@ qplot(sum_cols, fill = I("#008cff"), col = I("#afdbff")) +
     ggtitle("Distribution of the column count")
 ```
 
+It looks like the vast majority of movies for which we computed similarity scores achieve a sum of similaraties to other movies between about 12 and 40. The distribution is skewed to the right, indicating that generally few movies achieve similarity sums over 63.
+
+
 ## 7. Produce and discuss the output. What are the results?
 
 By using `predict()` function, we can identify similar films and rank them. For the
 `top_recommendations` variable, we are setting it to 10 which is the number of films
-that will be recommended to each user. Note that we will be using the testing set here.
+that will be recommended to each user. Note that we will be using the testing set here, i.e. we predict on data not seen before by the prediction model.
 
 ```{r}
 top_recommendations <- 10 # the number of items to recommend to each user
@@ -339,53 +342,60 @@ image(
 ```
 
 After training our recommendation, we generated a heatmap that contains top 20
-films from our training set; to visualize, among top 20, which ones are most
-similar to which other movies. This is exploring what will be the basis of our
-recommendations (recommending movies similar to what a user already liked).
+films from our training set; among the top 20, we visualized which ones are 
+most similar to which other movies. This is exploring what will be the basis of our recommendations (recommending movies similar to what a user already liked).
 
 ```{r}
 image(model_info$sim[1:top_items, 1:top_items],
    main = "Heatmap of the first rows and columns")
 ```
 
-From the `recommendation_matrix` that we generated above, we can visualize the 
-distribution (by count) of the top 10 recommended movie titles via this 
-histrogram. 
+In addition to the prior visualizations, we can use the `recommendation_matrix` that we generated above to see the frequency distribution of the top 10 recommended movie titles via this histrogram:
 
-```{r, fig.width=10,fig.height=11}
+```{r, fig.width=10,fig.height=9}
+# DataFrame is needed for ggplot:
 recommendation_table <- as.data.frame(
     as.vector(recommendation_matrix)
 )
 colnames(recommendation_table)[1] <- "movieId"
 
+# Only get movies recommended more than 5 times:
 recommendation_table_top <- recommendation_table %>%
     group_by(movieId) %>%
     filter(n() > 5)
 
+# Translate movie ID's into human-readable titles:
 recommendation_table_top$title <- with(
     movie_data, title[match(recommendation_table_top$movieId, movieId)]
 )
 
+# Manual frequency count:
 recommendation_table_top <- recommendation_table_top %>%
     add_count(title, sort = TRUE) %>%
     distinct()
 
-ggplot(recommendation_table_top[1:10, ], aes(x = title, y = n)) +
+# Visualize top 10 most recommended titles, in descending order:
+ggplot(
+    recommendation_table_top[1:10, ],
+    aes(x = reorder(title, -n), y = n)
+) +
     geom_bar(stat = "identity", show.legend = FALSE, width = 0.8) +
     labs(x = "Movie Title",
          y = "Frequency",
-         title = "Distribution of recommendation matrix") +
+         title = "Frequency Distribution of Most Recommended Movies") +
     theme(axis.text.x = element_text(
         angle = 75, vjust = 0.5, hjust = 0.5, size = 8
         ),
-        axis.title.x = element_text(size = 10),
-        axis.title.y = element_text(size = 10),
-        plot.title = element_text(size = 15)
+        axis.title.x = element_text(size = 16),
+        axis.title.y = element_text(size = 16),
+        plot.title = element_text(size = 20)
     )
 ```
 
 So we are seeing the most frequently recommended movie is 
 `r recommendation_table_top$title[1]`.
+
+\newpage
 
 ## Citations
 
