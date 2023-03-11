@@ -28,10 +28,10 @@ library(ggplot2)
 library(reshape2)
 ```
 
+Reading in the dataset, as downloaded from the links provided at  
+https://data-flair.training/blogs/data-science-r-movie-recommendation/   (@dataflair_machine_2023)
+and saved into personal GitHub space:
 ``` {r, message = FALSE}
-# Reading in the dataset, as downloaded from the links provided at
-# https://data-flair.training/blogs/data-science-r-movie-recommendation/
-# and saved into personal GitHub space:
 movie_data <- read_csv(
     "https://raw.githubusercontent.com/dr3am05/Source/main/movies.csv"
 )
@@ -51,7 +51,7 @@ columns, named `userId`, `movieId`, `rating` and `timestamp`.
 
 Below is a summary of our movie data and ratings data by each variable. 
 
-``` {r, include = TRUE, echo=TRUE}
+``` {r}
 summary(movie_data)
 summary(rating_data)
 ```
